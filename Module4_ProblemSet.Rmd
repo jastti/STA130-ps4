@@ -1,0 +1,147 @@
+---
+title: "STA130 -- Winter 2022"
+author: "Jasmine Tian"
+subtitle: Module 4 Problem Set
+output:
+  pdf_document: default
+  word_document: default
+---
+
+```{r, echo=FALSE, include=FALSE}
+library(tidyverse)
+library(knitr)
+opts_chunk$set(warning = FALSE, message = FALSE)
+```
+
+
+\newpage  
+# Part 1
+
+## Question 1 [Required]
+
+Approximately 22% of the general population use the social media platform Twitter. Suppose that the Department of Statistical Sciences (DoSS) is conducting a study to see if this percentage is the same among their undergraduate students (that is, all students in an undergraduate DoSS statistics program). This would help them to better promote social, academic and networking events to its students. Suppose 400 students in statistics programs are randomly selected and asked whether or not they use Twitter. Suppose that 103 of these 400 students respond that they use Twitter.  
+
+(a) What are appropriate null and alternative hypotheses to test the claim? Make sure you define the parameter in context.
+
+**Null hypothesis** ( $H_0$ ): There are 22% of the general population use the social media platform Twitter
+$$H_0: p_{use} = 0.22$$
+
+**Alternative hypothesis** ( $H_A$ or $H_a$ or $H_1$ ): There are not 22% of the general population use the social media platform Twitter
+
+$$H_1: p_{use} \neq 0.22$$
+
+(b) Use the `sample()` function to simulate the number of students who use Twitter in a random sample of 400 DoSS students, under the assumption that the prevalence of Twitter usage is the same among DoSS students as it is in the general population. How many Twitter users did you have in your simulated sample of 400 students?  Visualize the number of Twitter users versus non-Twitter users with a bar plot.  How does this simulated proportion compare to the results of the Twitter study (i.e., that 103 of the 400 students sampled use Twitter in the sample of real DOSS students)? How does it compare to the assumption that 22% of students use Twitter. 
+
+I have 400*0.22 = 88 Twitter users in the simulated sample of 400 students.
+```{r}
+ggplot(data=NULL, aes(x=c("Twitterer","Non_Twitterer"), y=c(88,400-88))) + 
+  geom_col() + lims(y=c(0,400))
+```
+
+    Note: the probabilities assigned to the values in the vector from which you're sampling using the `sample()` function are considered equal by default. For example, consider simulating flipping a fair coin 10 times:
+
+```{r}
+sample(c("Head","Tail"), size=10,replace=TRUE)
+# will do the same thing as:
+sample(c("Head","Tail"), size=10, prob=c(0.5, 0.5), replace=TRUE)
+# Even though the exact counts of "Head" and "Tail" differ each time you
+# run this code, if you simulate enough coin flips (by increasing
+# the value of 'size', you'll get approximately the same proportion
+# of "Head" and "Tail" outcomes)
+
+# To modify the code to make Tails much more likely than Heads, 
+# we could change the probs:
+sample(c("Head","Tail"), size=10, prob=c(0.1, 0.9), replace=TRUE)
+```
+
+*Set the random number seed to the last 2 digits of your student number (not your UTORID, your 9-10 digit student number) before carrying out your simulation.  We set the seed so that the results won't change each time this code is run or knitted. If you don't do this, your interpretations and conclusions may not be relevant to the new run of the code (or when you knit your Rmd file!). *
+ 
+```{r}
+set.seed(15)
+
+```
+
+```{r}
+ggplot(data=NULL, aes(x=c("Twitterer","Non_Twitterer"), y=c(103,400-103))) + 
+  geom_col() + lims(y=c(0,400))
+```
+
+
+As a result of the study, we found that 103 of the 400 students in the sample used Twitter, i.e., the percentage of Twitter users in the 400 student sample was 103/400 = 0.2575, which is more than 3.0% higher than the simulated percentage.
+
+
+(c) Use R to estimate the sampling distribution of the test statistic under the assumption that the prevalence of Twitter usage among DoSS students matches that of the general population. Use 1000 repetitions and set the seed to the last 2 digits of your student number. Generate the plot of this estimated sampling distribution and describe the distribution in a few sentences.
+
+    Use `labs(x="your title here")` to give the x-axis a better name than the default. You can split your axis title across different lines to make it easier to read by adding `\n` OR typing an "enter"/carriage return. 
+
+```{r, echo=T, message=F}
+set.seed(15)
+n_observations <- 400 # number of observations (e.g. coin flips or spins)
+repetitions <- 1000 # 1000 simulations
+simulated_stats <- rep(NA, repetitions) # 1000 missing values to start
+
+for (i in 1:1000)
+{
+  new_sim <- sample(c(0.22, 0.78), 
+                    size = n_observations,    
+                    prob = c(0.22, 0.78),
+                    replace = TRUE)
+  sim_p <- sum(new_sim == 0.22) / n_observations
+  
+  simulated_stats[i] <- sim_p; # add new value to vector of results
+}
+
+sim <- tibble(p_use = simulated_stats)
+
+sim %>% ggplot(aes(x = p_use)) + 
+  geom_histogram(binwidth = 0.015, colour = "black", fill = "grey") +
+  xlab("Proportion of the general population use the social media platform Twitter 
+       (p_use = 0.22)")
+```
+
+
+
+(d) Use R to compute the p-value of this hypothesis test based on the sampling distribution that you estimated in part (c).
+
+
+```{r}
+test_stat <- 103/400
+#0.7425
+pvalue <- sim %>% 
+  filter(abs(p_use - 0.22) >= abs(test_stat - 0.22)) %>% 
+  summarise(p_value = n() / repetitions)
+pvalue
+```
+
+
+(e) Which of the following statements is/are valid description(s) of the p-value you computed in (d):
+
+    *i.*  The probability that the proportion of DoSS students who use Twitter matches the general population.
+
+    *ii.*  The probability that the proportion of DoSS students who use Twitter does not match the general population.
+
+    *iii.* The probability of obtaining a number of students who use Twitter in a sample of 400 students at least as extreme as the result in this study.
+
+    *iv.*  The probability of obtaining a number of students who use Twitter in a sample of 400 students at least as extreme as the result in this study, if the prevelance of Twitter usage among all DoSS students matches the general population.
+
+iv
+
+
+(f) Write a conclusion to this hypothesis test based on the p-value you computed in part (d).
+
+**Conclusion (based on $\hat{p}_{use} = \frac{103}{400} = 0.2575$ )**: Since the p-value is `r round(pvalue,3)`, we conclude that we have ***weak evidence against the null hypothesis*** that there are 22% of the general population use the social media platform Twitter.
+
+\newpage
+# Part 2
+
+Your friends just finished participating in a new version of the British Tea experiment and had so much fun that they want you to come up with an entirely new experiment (except one that does NOT involve drinking tea any more)! Then, help your friends come up with a hypothesis that you could test using a simulation test! 
+
+
+
+To better help you to understand the British Tea experiment, I would like to come up with a bright new experiment about a number generator - picking one number automatically and randomly from 1~10 (the number can be repeated) and determining the probability of even number appears. We will focus on this experiment in five steps: state hypotheses, calculate a test statistic, estimate sampling distribution, evaluate the evidence, and make a conclusion. And we have 50 students as our sample, 26 of them have picked even numbers.\
+So our first step is to make our hypotheses. We will state a null hypothesis as default, which is the hypothesis that statisticians want to reject; and an alternative hypothesis to test, which is is the hypothesis that the statistician wants to accept. Write into statisticians’ words, we have $$H_0: p_{even} = 0.5$$that the number generator is fair.$$H_1: p_{even} \neq 0.5$$that the number generator is unfair. Since there are 5 odds and 5 evens from 1~10, 0.5 is also as known as the parameter - the true probability of getting an even number. \
+The second step is to have a sample statistic based on which decisions are made about the null and alternative hypotheses, we called it test statistic. We calculate the test statistic based on our observations, which is 50 students we have for this experiment. Since there are 26 of them get even number, we say the test statistic $\hat{p}_{even}= \frac{26}{50} = 0.52$.\
+Now we can look at the distribution of 50 picks of a number generator, and we already recorded the proportion of even number appears. In other words, we simulate samples under our null hypothesis $H_0$, and calculate the statistic for each to determine all the possible samples of the same size from the same “true” value we are focused on. Then we may draw a graph from the data.\
+After that, we can evaluate the evidence against $H_0$. Think about this question, “we have our test statistic $\hat{p}_{even}= \frac{26}{50} = 0.52$; however, if the number generator is fair, is our observed value 0.52 unusual? And how unusual?” So we come up with our p-value to check the probability of observing data that are “at least as unusual” as the sample date, under the assumption that $H_0$ is true. P-value can tell us how strong we can be against $H_0$ - the smaller the p-value, the more “evidence” we have against $H_0$.\
+Luckily, we are in our last part of this experiment, conclusion! What we need to do is just make a conclusion based on our test statistic $\hat{p}_{even}= \frac{26}{50} = 0.52$ and the p-value to explain how strong evidence we have to against the null hypothesis that the number generator is fair.\
+Hope you can have fun and understand more about the experiment with the hypothesis testing we just finished!
